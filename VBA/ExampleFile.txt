@@ -1,0 +1,4 @@
+recipient1@company2.net
+company2
+othercompany3
+repicient4
