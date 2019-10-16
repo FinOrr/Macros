@@ -1,0 +1,10 @@
+'Runs automatically when Outlook starts up
+Private Sub Application_Startup()
+    Call StartTimer(1)                              ' StartTimer argument is timer period in minutes. Does NOT accept decimal values.
+    MsgBox "Filter Started", , "CC Safety Filter"
+End Sub
+
+'Stops the timer when you quit
+Private Sub Application_Quit()
+    If TimerID <> 0 Then Call StopTimer
+End Sub
