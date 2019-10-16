@@ -1,0 +1,92 @@
+'   ----    Periodic Functions      ----
+'   This module contains functions that
+'   you want to run at set intervals
+'   ------------------------------------
+Declare Function SetTimer Lib "user32" (ByVal hwnd As Long, ByVal nIDEvent As Long, ByVal uElapse As Long, ByVal lpTimerfunc As Long) As Long
+Declare Function KillTimer Lib "user32" (ByVal hwnd As Long, ByVal nIDEvent As Long) As Long
+
+'   ---- The TimerID is used to turn off the timer. TimerID = 0 when timer expired. ----
+Public Sub StartTimer(ByVal TimerPeriod As Long)
+    TimerPeriod = TimerPeriod * 1000 * 60                           ' The SetTimer call accepts milliseconds, so convert from minutes
+    If TimerID <> 0 Then Call StopTimer                             ' Check to see if timer is running before call to SetTimer
+    TimerID = SetTimer(0, 0, TimerPeriod, AddressOf TimerCallback)  ' Load WDT with the time in milliseconds, TimerCallBack is set to
+    
+    ' Check to see if the timer was initialised correctly
+    If TimerID = 0 Then
+        MsgBox "The timer failed to start.", , "Error!"
+    End If
+End Sub
+
+'   ---- Wrapper to call the KillTimer function, set TimerID = 0 if timer successfully stopped. ----
+Public Sub StopTimer()
+Dim StopFlag As Long
+    StopFlag = KillTimer(0, TimerID)
+    If StopFlag = 0 Then
+        MsgBox "The timer cannot be stopped - it may already have stopped.", , "Error!"
+    Else
+        TimerID = 0
+    End If
+End Sub
+
+Public Sub TimerCallback(ByVal hwnd As Long, ByVal uMsg As Long, ByVal idevent As Long, ByVal Systime As Long)
+    Dim Filepath As String              ' Filepath is the file location of the keyword data file
+    Dim MailAdr() As String             ' Array that holds each of the keywords from the file
+    Dim i As Integer                    ' i is a loop counter
+    i = 0
+    
+    Filepath = "C:\Users\ExampleUser\ExampleFile.txt"     ' YOU MUST SET THE LOCATION OF THE FILE THAT CONTAINS FORBIDDEN KEYWORDS
+    Open Filepath For Input As #1
+        Do While Not EOF(1)             ' Loop through the lines in the data file of keywords
+            ReDim Preserve MailAdr(i)   ' Redim the array for the new element
+            Line Input #1, MailAdr(i)   ' read next line from file and add text to the array
+            i = i + 1
+        Loop
+    Close #1
+    Call CheckAddress(MailAdr)          ' Where the magic happens
+End Sub
+
+'   ---- CC safety helps stop sending mail to two different companies!   ----
+'   Reads a list of client companies in from a text file, and if two or
+'   more clients clash, then it moves the email from the outbox to the trash
+'   -------------------------------------------------------------------------
+Public Sub CheckAddress(ByRef Recipients() As String)
+    Dim ol As Outlook.Application
+    Dim olNs As Outlook.NameSpace
+    Dim olOutbox As Outlook.MAPIFolder      ' MAPI is the API that allows programs to become email-aware
+    Dim olItem As Object
+    Dim clientCounter As Integer            ' Counts the number of companies that appear in the 'To' field
+    clientCounter = 0
+    
+    On Error Resume Next
+    Set ol = Outlook.Application
+    Set olNs = ol.GetNamespace("MAPI")
+    Set olOutbox = olNs.GetDefaultFolder(olFolderOutbox)
+    
+    ' MsgBox "Check Address Running"
+    For Each olItem In olOutbox.Items
+        If olItem.Class = olMail Then                                       ' Loop through all the emails in the outbox
+            For Each Recipient In Recipients                                ' Loop through the email addresses that the message is being sent to
+                If InStr(1, olItem.Recipient, Recipient) > 0 Then           ' If one of the defined clients is in the list
+                    clientCounter = clientCounter + 1                       ' Increment the counter that tracks how many different clients it was sent to
+                End If
+                If clashCount > 1 Then                                      ' If the email is going to more than one of companies listed in the data file
+                    Set olItem = olItem.Move(Session.GetDefaultFolder(olFolderDeletedItems))                        ' Move the email to the deleted items folder
+                    olItem.Delete                                                                                   ' Delete the outgoing email
+                    MsgBox "A message was not sent and has been moved to the Deleted Items folder.", , "CC Filter"  ' Give a lovely message box alerting the user
+                End If
+            Next
+        End If
+    Next
+    
+' Uncomment the following for debugging:
+'    If Err.Number <> 0 Then
+'        MsgBox "Error Number: " & Err.Description, , Err.Number
+'        Err.Clear
+'    End If
+
+    ' Release the objects after use
+    Set olItem = Nothing
+    Set olOutbox = Nothing
+    Set olNs = Nothing
+    
+End Sub
