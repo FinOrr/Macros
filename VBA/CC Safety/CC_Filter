@@ -1,3 +1,5 @@
+' CC Safety Filter
+' Reduce the risk of CC'ing in the wrong people to an email
 '   ----    Periodic Functions      ----
 '   This module contains functions that
 '   you want to run at set intervals

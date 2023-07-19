@@ -74,7 +74,6 @@ Sub ImportLogs()
             ' Write the values to the cells
             If UBound(Lines) > 0 Then
                 For i = LBound(Lines) To UBound(Lines)
-                    '   Debug.Print Lines(i)
                      ActiveSheet.Cells(i + 1, 1).Value = Lines(i)
                 Next i
                 Columns("A").Select
@@ -98,14 +97,12 @@ Sub ImportLogs()
 			' This function looks for a keyword (example below uses "input" and "output") in the file name and runs functions on the worksheet dependent on what it finds.
 			' For example if you're logging a system's input and output and want to format them differently, here's an example:
 			If InStr(DirectoryListArray(Counter), "Input") Then
-                'Debug.Print "Formatting [" & DirectoryListArray(Counter) & "] as PI log file"
-                FormatInputMacro
+                FormatInputMacro        ' Your FormatInputMacro()
             Else
                 'Debug.Print "Could not find 'Input' in: " & DirectoryListArray(Counter)
             End If
             
             If InStr(DirectoryListArray(Counter), "Output") Then
-                'Debug.Print "Formatting [" & DirectoryListArray(Counter) & "] as Attingimus log file"
 				FormatOutputMacro		' Call FormatOutputMacro()
             Else
             End If
